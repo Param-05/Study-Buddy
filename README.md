@@ -34,3 +34,15 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+Tools used: https://ui.shadcn.com/docs/installation/next
+Darkmode: npm install next-themes (https://ui.shadcn.com/docs/dark-mode/next)
+Toast: https://ui.shadcn.com/docs/components/toast
+next-notetaking-app % npm add -D prettier-plugin-tailwindcss
+eslint.config.mjs -   {
+    rules: {
+      "react/no-unescaped-entities": "off", // Allowed to use , and ' in JSX
+  },
+  },
+Prisma DB: https://www.prisma.io/docs/orm/overview/introduction/what-is-prisma
