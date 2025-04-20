@@ -56,20 +56,22 @@ Note Text: ${note.text}
   console.log("Flashcard Generation Response:", text);
 
   // ✅ Improved parsing logic
-  const flashcards = Array.from(
-    text.matchAll(
-      /--- Flashcard ---\s*Question:\s*([\s\S]*?)\s*Answer:\s*([\s\S]*?)(?=--- Flashcard ---|$)/g
-    )
-  )
-    .map((match) => {
-      const question = match[1].trim();
-      const answer = match[2].trim();
-      if (question && answer) {
-        return { questionText: question, answerText: answer };
-      }
-      return null;
-    })
-    .filter(Boolean) as { questionText: string; answerText: string }[];
+  const flashcards = text
+    ? Array.from(
+        text.matchAll(
+          /--- Flashcard ---\s*Question:\s*([\s\S]*?)\s*Answer:\s*([\s\S]*?)(?=--- Flashcard ---|$)/g
+        )
+      )
+        .map((match) => {
+          const question = match[1].trim();
+          const answer = match[2].trim();
+          if (question && answer) {
+            return { questionText: question, answerText: answer };
+          }
+          return null;
+        })
+        .filter(Boolean) as { questionText: string; answerText: string }[]
+    : [];
 
   console.log("Parsed Flashcards:", flashcards);
 
@@ -88,3 +90,25 @@ Note Text: ${note.text}
 
   return flashcards;
 };
+
+export const deleteFlashcardById = async (flashcardId: string) => {
+  const user = await getUser();
+  if (!user) throw new Error("You must be logged in.");
+
+  // Ensure ownership before deleting
+  const flashcard = await prisma.flashCard.findUnique({
+    where: { id: flashcardId },
+    include: { note: true },
+  });
+
+  if (!flashcard || flashcard.note.authorId !== user.id) {
+    throw new Error("Unauthorized or flashcard not found.");
+  }
+
+  await prisma.flashCard.delete({
+    where: { id: flashcardId },
+  });
+
+  return { success: true };
+};
+

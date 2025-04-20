@@ -36,9 +36,9 @@ function NewNoteButton( { user }: Props ) {
   }
   return (
     <Button
+    className='p-5 hover:scale-110 transition-transform hover:bg-[oklch(0.76 0.007 247.896)] dark:hover:bg-[oklch(0.26_0.02_262.13)]'
       onClick={handleClickNewNoteButton}
       variant='secondary'
-      className='w-24'
       disabled={loading}
     >
       {loading ? <Loader2 className='animate-spin' /> : 'New Note'}

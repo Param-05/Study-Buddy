@@ -26,7 +26,9 @@ export default function GenerateFlashcardsButton({ user, noteId }: Props) {
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <Button onClick={handleGenerate} disabled={isPending}>
+      <Button 
+    className='p-5 hover:scale-110 transition-transform hover:bg-[oklch(0.76 0.007 247.896)] dark:hover:bg-[oklch(0.26_0.02_262.13)]'
+      variant="secondary" onClick={handleGenerate} disabled={isPending}>
         {isPending ? "Generating..." : "Generate Flashcards"}
       </Button>
     </div>

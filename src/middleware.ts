@@ -69,7 +69,7 @@ export async function updateSession(request: NextRequest) {
   // If URL has no noteId, it will go to the latest note, if they don't have any notes it will create a note
   const { searchParams, pathname } = new URL(request.url);
 
-  if (!searchParams.get("noteId") && pathname === "/") {
+  if (!searchParams.get("noteId") && pathname === "/notes") {
     const {
       data: { user },
     } = await supabase.auth.getUser();

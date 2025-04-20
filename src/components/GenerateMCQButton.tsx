@@ -63,7 +63,9 @@ export default function GenerateMCQButton({ user, noteId }: Props) {
   return (
     <Dialog open={open} onOpenChange={handleOnOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="secondary">Generate MCQs</Button>
+        <Button 
+    className='p-5 hover:scale-110 transition-transform hover:bg-[oklch(0.76 0.007 247.896)] dark:hover:bg-[oklch(0.26_0.02_262.13)]'
+         variant="secondary">Generate MCQs</Button>
       </DialogTrigger>
 
       <DialogContent

@@ -1,8 +1,17 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { getFlashcardsForNote } from "@/actions/flashcards";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  deleteFlashcardById,
+  getFlashcardsForNote,
+} from "@/actions/flashcards";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Flashcard from "@/components/Flashcard"; // Tailwind-based flipping card
 import { User } from "@supabase/supabase-js";
@@ -14,7 +23,9 @@ type Props = {
 };
 
 export default function DisplayFlashcardsButton({ user, noteId }: Props) {
-  const [flashcards, setFlashcards] = useState<{ id: string; questionText: string; answerText: string }[]>([]);
+  const [flashcards, setFlashcards] = useState<
+    { id: string; questionText: string; answerText: string }[]
+  >([]);
   const [index, setIndex] = useState(0);
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -44,40 +55,71 @@ export default function DisplayFlashcardsButton({ user, noteId }: Props) {
   const handleNext = () => {
     setIndex((prev) => (prev < flashcards.length - 1 ? prev + 1 : 0));
   };
+  const handleDelete = async () => {
+    const cardToDelete = flashcards[index];
+    if (!cardToDelete) return;
+
+    await deleteFlashcardById(cardToDelete.id);
+
+    setFlashcards((prev) => {
+      const updated = [...prev];
+      updated.splice(index, 1);
+      return updated;
+    });
+
+    // Move back a card if on last one
+    setIndex((prev) =>
+      prev >= flashcards.length - 1 && flashcards.length > 1 ? prev - 1 : prev,
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline">Display Flashcards</Button>
+        <Button
+          className="hover:bg-[oklch(0.76 0.007 247.896)] p-5 transition-transform hover:scale-110 dark:hover:bg-[oklch(0.26_0.02_262.13)]"
+          variant="secondary"
+        >
+          Display Flashcards
+        </Button>
       </DialogTrigger>
 
-      <DialogContent className="flex flex-col items-center gap-4 py-20 px-6">
+      <DialogContent className="flex flex-col items-center gap-4 px-6 py-20">
         <DialogHeader>
           <DialogTitle>Flashcards</DialogTitle>
         </DialogHeader>
 
-        {isPending && <p className="text-sm animate-pulse">Loading flashcards...</p>}
+        {isPending && (
+          <p className="animate-pulse text-sm">Loading flashcards...</p>
+        )}
 
         {!isPending && flashcards.length > 0 && (
           <>
             <Flashcard
-              key={index}
+            key={flashcards[index].id}
               question={flashcards[index].questionText}
               answer={flashcards[index].answerText}
             />
-            <div className="flex justify-between items-center w-full mt-4">
+            <div className="mt-4 flex w-full items-center justify-between">
               <span className="text-sm text-gray-500">
                 Card {index + 1} of {flashcards.length}
               </span>
-              <Button onClick={handleNext}>
-                {index < flashcards.length - 1 ? "Next" : "Start Over"}
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="destructive" onClick={handleDelete}>
+                  Delete
+                </Button>
+                <Button onClick={handleNext}>
+                  {index < flashcards.length - 1 ? "Next" : "Start Over"}
+                </Button>
+              </div>
             </div>
           </>
         )}
 
         {!isPending && flashcards.length === 0 && (
-          <p className="text-gray-500 text-sm mt-4">No flashcards found for this note.</p>
+          <p className="mt-4 text-sm text-gray-500">
+            No flashcards found for this note.
+          </p>
         )}
       </DialogContent>
     </Dialog>
