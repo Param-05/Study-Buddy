@@ -39,7 +39,8 @@ export default function NoteTitleInput({ noteId, startingTitle }: Props) {
       value={noteTitle}
       onChange={onTitleChange}
       placeholder="Untitled"
-      className="w-full max-w-4xl border p-2 text-lg font-semibold focus-visible:ring-0"
+      // className="w-full max-w-4xl border p-2 text-lg font-semibold focus-visible:ring-0"
+      className="w-full max-w-4xl border p-2 focus-visible:ring-0 text-4xl font-bold px-4 py-4 h-auto"
     />
   )
 }

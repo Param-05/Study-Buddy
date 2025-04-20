@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { askAIAboutNotesAction } from "@/actions/ai";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input"; // adjust path
 import "@/styles/ai-response.css";
+import FancyAIButton from "@/components/FancyAIButton";
 
 type Props = {
   user: User | null;
@@ -30,11 +31,12 @@ function AskAIButton({ user, noteId }: Props) {
   const lastInputValue = useRef<string>("");
 
   const placeholders = [
-    "What's the first rule of Fight Club?",
-    "Who is Tyler Durden?",
-    "Where is Andrew Laeddis Hiding?",
-    "Write a Javascript method to reverse a string",
-    "How to assemble your own PC?",
+    "Can you provide a summary?",
+    "What are the key takeaways?",
+    "What are the main ideas?",
+    "What are the important concepts?",
+    "What are the key arguments?",
+    "Generate MCQs based on my notes"
   ];
 
   const handleOnOpenChange = (isOpen: boolean) => {
@@ -70,17 +72,22 @@ function AskAIButton({ user, noteId }: Props) {
     setTimeout(scrollToBottom, 100);
 
     startTransition(async () => {
-      const response = await askAIAboutNotesAction(noteId, newQuestions, responses);
+      const response = await askAIAboutNotesAction(
+        noteId,
+        newQuestions,
+        responses,
+      );
       setResponses((prev) => [...prev, response]);
       setTimeout(scrollToBottom, 100);
     });
   };
 
-
   return (
     <Dialog open={open} onOpenChange={handleOnOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="secondary">Ask AI</Button>
+        <div className="!fixed !right-20 !bottom-10">
+          <FancyAIButton className="shadow-xl ring-2">Ask AI</FancyAIButton>
+        </div>
       </DialogTrigger>
       <DialogContent
         className="custom-scrollbar flex h-[85vh] max-w-4xl flex-col overflow-y-auto"
@@ -95,12 +102,12 @@ function AskAIButton({ user, noteId }: Props) {
         <div className="mt-4 flex flex-col gap-8">
           {questions.map((question, index) => (
             <Fragment key={index}>
-              <p className="ml-auto max-w-[60%] rounded-md bg-muted px-2 py-1 text-sm text-muted-foreground">
+              <p className="bg-muted text-muted-foreground ml-auto max-w-[60%] rounded-md px-2 py-1 text-sm">
                 {question}
               </p>
               {responses[index] && (
                 <p
-                  className="bot-response text-sm text-muted-foreground"
+                  className="bot-response text-muted-foreground text-sm"
                   dangerouslySetInnerHTML={{ __html: responses[index] }}
                 />
               )}

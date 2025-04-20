@@ -81,59 +81,72 @@ ${formattedNote}
 
 
 // Action: Generate MCQs
-export const askAIToGenerateMCQsAction = async (
-  previousAnswers: string[] = [],
-  previousSolutions: string[] = [],
+export const generateMCQsAction = async (
+  noteId: string,
+  previousQuestions: string[] = []
 ) => {
   const user = await getUser();
-  if (!user) {
-    throw new Error("You must be logged in to generate MCQs");
-  }
+  if (!user) throw new Error("You must be logged in.");
 
-  const notes = await prisma.note.findMany({
-    where: { authorId: user.id },
-    orderBy: { createdAt: "desc" },
-    select: { title: true, text: true, createdAt: true, updatedAt: true },
+  const note = await prisma.note.findFirst({
+    where: { id: noteId, authorId: user.id },
+    select: {
+      title: true,
+      text: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
-  if (notes.length === 0) {
-    return "You don't have any notes yet.";
+  if (!note) {
+    return "The selected note could not be found.";
   }
 
-  const formattedNotes = notes
-    .map((note) =>
-      [`Title: ${note.title}`, `Text: ${note.text}`, `Created at: ${note.createdAt}`, `Last Updated: ${note.updatedAt}`].join("\n")
-    )
-    .join("\n\n");
+  const formattedNote = `
+Title: ${note.title}
+Text: ${note.text}
+Created at: ${note.createdAt}
+Updated at: ${note.updatedAt}
+  `.trim();
 
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const messages: { role: string; content: string }[] = [
-    {
-      role: "developer",
-      content: `
-You are the AI tutor. Read these notes and generate one MCQ, then wait for the user's answer before providing the solution and moving to the next question. Format strictly in HTML (use <p>, <strong>, <em>, <ul>, <ol>, <li>, <h1>-<h6>, <br>, <blockquote>). Avoid inline styles.
 
-Here are the user's notes:
-${formattedNotes}
-      `,
-    },
-  ];
+  let prompt = `
+You are an AI tutor. Based on the following note, generate 10 **new** multiple choice questions (MCQs) with 4 options each. Only one option should be correct.
 
-  if (previousAnswers.length > 0) {
-    messages.push({
-      role: "user",
-      content: `
-Here are the previous answers:
-${previousAnswers.map((a, i) => `Q${i + 1}: ${a}`).join("\n")}
+If any previous questions are provided, do not repeat them. Format each MCQ strictly in HTML using:
+<p> for the question,
+<ul><li> for the options, and
+<strong>Answer:</strong> [Correct option] for the correct answer.
 
-And here are the previous explanations:
-${previousSolutions.map((s, i) => `A${i + 1}: ${s}`).join("\n")}
-      `,
-    });
+Avoid inline styles or custom tags. Keep it clean and clear.
+
+Note:
+${formattedNote}
+`;
+
+  if (previousQuestions.length > 0) {
+    const prevContent = previousQuestions
+      .map((q, i) => `Previous Q${i + 1}: ${q}`)
+      .join("\n");
+    prompt += `
+
+These questions were already generated before:
+${prevContent}
+`;
   }
 
-  const result = await ai.generateContent({ messages });
-  return result;
+  const result = await ai.models.generateContent({
+    model: "gemini-1.5-flash",
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: prompt }],
+      },
+    ],
+  });
+
+  return result.text?.replace(/```html|```/g, "").trim() || "Failed to generate MCQs.";
 };
 
 // Action: Smart Lookup
@@ -170,101 +183,55 @@ console.log("Smart Lookup Prompt:", prompt);
 };
 
 
-// Action: Generate Flashcards
-export const generateFlashcardsAction = async () => {
+export const summarizeNoteAction = async (noteId: string) => {
   const user = await getUser();
   if (!user) {
-    throw new Error("You must be logged in to generate flashcards.");
+    throw new Error("You must be logged in to summarize your notes.");
   }
 
-  const notes = await prisma.note.findMany({
-    where: { authorId: user.id },
-    orderBy: { createdAt: "desc" },
-    select: { title: true, text: true, createdAt: true, updatedAt: true },
+  const note = await prisma.note.findFirst({
+    where: {
+      id: noteId,
+      authorId: user.id,
+    },
+    select: {
+      title: true,
+      text: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
-  if (notes.length === 0) {
-    return "You don't have any notes yet.";
+  if (!note) {
+    return "The selected note could not be found.";
   }
 
-  const formattedNotes = notes
-    .map((note) =>
-      [`Title: ${note.title}`, `Text: ${note.text}`, `Created at: ${note.createdAt}`, `Updated at: ${note.updatedAt}`].join("\n")
-    )
-    .join("\n\n");
+  const formattedNote = [
+    `Title: ${note.title}`,
+    `Text: ${note.text}`,
+    `Created at: ${note.createdAt}`,
+    `Last Updated: ${note.updatedAt}`,
+  ].join("\n");
 
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const messages: { role: string; content: string }[] = [
-    {
-      role: "developer",
-      content: `
-You are an AI tutor. Generate flashcards in this strict format:
---- Flashcard ---
-Question: [question]
-Answer: [answer]
 
-Here are the user's notes:
-${formattedNotes}
-      `,
-    },
-  ];
+  const prompt = `
+You are an AI tutor. Summarize the following student's note into a helpful study summary for last minute before exam. Use clear language. Format the summary in clean HTML using only valid tags (<p>, <ul>, <li>, etc). Avoid inline styles or extra spacing.
 
-  const result = await ai.generateContent({ messages });
-  return result;
-};
 
-// Action: Quiz Questions
-export const askQuizQuestionsAction = async (
-  previousAnswers: string[] = [],
-  previousFeedback: string[] = [],
-) => {
-  const user = await getUser();
-  if (!user) {
-    throw new Error("You must be logged in to take the AI quiz.");
-  }
+Note:
+${formattedNote}
+  `.trim();
 
-  const notes = await prisma.note.findMany({
-    where: { authorId: user.id },
-    orderBy: { createdAt: "desc" },
-    select: { title: true, text: true, createdAt: true, updatedAt: true },
+  const result = await ai.models.generateContent({
+    model: "gemini-1.5-flash",
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: prompt }],
+      },
+    ],
   });
 
-  if (notes.length === 0) {
-    return "You don't have any notes yet.";
-  }
-
-  const formattedNotes = notes
-    .map((note) =>
-      [`Title: ${note.title}`, `Text: ${note.text}`, `Created at: ${note.createdAt}`, `Updated at: ${note.updatedAt}`].join("\n")
-    )
-    .join("\n\n");
-
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const messages: { role: string; content: string }[] = [
-    {
-      role: "developer",
-      content: `
-You are the AI tutor. Ask one question at a time, then wait for the user's answer, give feedback and encouragement, and proceed to the next. Format in HTML using headings and paragraphs.
-
-Here are the user's notes:
-${formattedNotes}
-      `,
-    },
-  ];
-
-  if (previousAnswers.length > 0) {
-    messages.push({
-      role: "user",
-      content: `
-Previous Answers:
-${previousAnswers.map((a, i) => `Q${i + 1}: ${a}`).join("\n")}
-
-Previous Feedback:
-${previousFeedback.map((f, i) => `A${i + 1}: ${f}`).join("\n")}
-      `,
-    });
-  }
-
-  const result = await ai.generateContent({ messages });
-  return result;
+  return result.text?.replace(/```html|```/g, "").trim() || "An error occurred while summarizing your notes.";
 };
