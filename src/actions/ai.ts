@@ -6,6 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 
 // Action: Ask AI About Notes
 export const askAIAboutNotesAction = async (
+  noteId: string,
   newQuestions: string[],
   responses: string[],
 ) => {
@@ -14,51 +15,70 @@ export const askAIAboutNotesAction = async (
     throw new Error("You must be logged in to ask AI questions");
   }
 
-  const notes = await prisma.note.findMany({
-    where: { authorId: user.id },
-    orderBy: { createdAt: "desc" },
-    select: { title: true, text: true, createdAt: true, updatedAt: true },
+  const note = await prisma.note.findFirst({
+    where: {
+      id: noteId,
+      authorId: user.id,
+    },
+    select: {
+      title: true,
+      text: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
-  if (notes.length === 0) {
-    return "You don't have any notes yet.";
+  if (!note) {
+    return "The selected note could not be found.";
   }
 
-  const formattedNotes = notes
-    .map((note) =>
-      [`Title: ${note.title}`, `Text: ${note.text}`, `Created at: ${note.createdAt}`, `Last Updated: ${note.updatedAt}`].join("\n")
-    )
-    .join("\n\n");
+  const formattedNote = [
+    `Title: ${note.title}`,
+    `Text: ${note.text}`,
+    `Created at: ${note.createdAt}`,
+    `Last Updated: ${note.updatedAt}`,
+  ].join("\n");
 
-  const ai = new GoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
-  const messages: { role: string; content: string }[] = [
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+  const contents: any[] = [
     {
-      role: "developer",
-      content: `
-You are an AI tutor that answers questions about a user's notes. Assume all questions are related to the user's notes. Speak succinctly and format in clean, valid HTML (using <p>, <strong>, <em>, <ul>, <ol>, <li>, <h1>-<h6>, <br>). Avoid inline styles or custom attributes.
+      role: "user",
+      parts: [
+        {
+          text: `
+You are an AI tutor that answers questions about a user's selected note. Speak succinctly and format in clean, valid HTML (using <p>, <strong>, <em>, <ul>, <ol>, <li>, <h1>-<h6>, <br>). Avoid inline styles or custom attributes.
 
-Here are the user's notes:
-${formattedNotes}
-      `,
+Here is the user's selected note:
+${formattedNote}
+          `.trim(),
+        },
+      ],
     },
   ];
 
-  // Include the user's questions and any previous AI responses for context
+  // Include past Q&A context
   if (newQuestions.length > 0) {
-    messages.push({
+    const history = newQuestions
+      .map((q, i) => `Q${i + 1}: ${q}\nA${i + 1}: ${responses[i] || ""}`)
+      .join("\n\n");
+
+    contents.push({
       role: "user",
-      content: newQuestions
-        .map((q, i) => `Q${i + 1}: ${q}\nA${i + 1}: ${responses[i] || ""}`)
-        .join("\n\n"),
+      parts: [{ text: history }],
     });
   }
 
-  const result = await ai.models.generateContent({ 
+  const result = await ai.models.generateContent({
     model: "gemini-1.5-flash",
-    contents:messages 
+    contents,
   });
-  return result;
+
+  // safely get the output text
+  return result.text?.replace(/```html|```/g, "").trim() || "A problem has occurred";
+
 };
+
 
 // Action: Generate MCQs
 export const askAIToGenerateMCQsAction = async (

@@ -1,7 +1,6 @@
 "use client";
 import { User } from "@supabase/supabase-js";
 import React, { Fragment, useRef, useState, useTransition } from "react";
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,70 +10,43 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
 import { useRouter } from "next/navigation";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowUpIcon } from "lucide-react";
-import { askAIAboutNotesAction } from "@/actions/notes";
-import "@/styles/ai-response.css"
+import { askAIAboutNotesAction } from "@/actions/ai";
+import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input"; // adjust path
+import "@/styles/ai-response.css";
 
 type Props = {
   user: User | null;
+  noteId: string;
 };
 
-function AskAIButton({ user }: Props) {
+function AskAIButton({ user, noteId }: Props) {
   const [isPending, startTransition] = useTransition();
-
   const [open, setOpen] = useState(false);
-  const [questionText, setQuestionText] = useState("");
   const [questions, setQuestions] = useState<string[]>([]);
   const [responses, setResponses] = useState<string[]>([]);
-
   const router = useRouter();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const lastInputValue = useRef<string>("");
+
+  const placeholders = [
+    "What's the first rule of Fight Club?",
+    "Who is Tyler Durden?",
+    "Where is Andrew Laeddis Hiding?",
+    "Write a Javascript method to reverse a string",
+    "How to assemble your own PC?",
+  ];
 
   const handleOnOpenChange = (isOpen: boolean) => {
     if (!user) {
       router.push("/login");
     } else {
       if (isOpen) {
-        // Everytime we open the dialog box we reset it
-        setQuestionText("");
         setQuestions([]);
         setResponses([]);
       }
       setOpen(isOpen);
     }
-  };
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  const handleInput = () => {
-    const textarea = textareaRef.current;
-    if (!textarea) {
-      return;
-    }
-    // text area grows if we add another line
-    textarea.style.height = "auto";
-    textarea.style.height = `${textarea.scrollHeight}px`;
-  };
-
-  const handleClickInput = () => {
-    // Anywhere we click it brings the focus to the input
-    textareaRef.current?.focus();
-  };
-
-  const handleSubmit = () => {
-    if(!questionText.trim()) return
-    const newQuestions = [...questions, questionText]
-    setQuestions(newQuestions)
-    setQuestionText("")
-    setTimeout(scrollToBottom, 100)
-    startTransition(async () => {
-      const response = await askAIAboutNotesAction(newQuestions, responses);
-      setResponses(prev => [...prev, response]);
-
-      setTimeout(scrollToBottom, 100)
-    })
   };
 
   const scrollToBottom = () => {
@@ -84,19 +56,36 @@ function AskAIButton({ user }: Props) {
     });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    lastInputValue.current = e.target.value;
   };
+
+  const handleSubmit = async () => {
+    const question = lastInputValue.current.trim();
+    if (!question) return;
+
+    const newQuestions = [...questions, question];
+    setQuestions(newQuestions);
+    lastInputValue.current = "";
+    setTimeout(scrollToBottom, 100);
+
+    startTransition(async () => {
+      const response = await askAIAboutNotesAction(noteId, newQuestions, responses);
+      setResponses((prev) => [...prev, response]);
+      setTimeout(scrollToBottom, 100);
+    });
+  };
+
 
   return (
     <Dialog open={open} onOpenChange={handleOnOpenChange}>
       <DialogTrigger asChild>
         <Button variant="secondary">Ask AI</Button>
       </DialogTrigger>
-      <DialogContent className="custom-scrollbar flex h-[85vh] max-w-4xl flex-col overflow-y-auto" ref={contentRef}>
+      <DialogContent
+        className="custom-scrollbar flex h-[85vh] max-w-4xl flex-col overflow-y-auto"
+        ref={contentRef}
+      >
         <DialogHeader>
           <DialogTitle>Ask AI About Your Notes</DialogTitle>
           <DialogDescription>
@@ -109,41 +98,26 @@ function AskAIButton({ user }: Props) {
               <p className="ml-auto max-w-[60%] rounded-md bg-muted px-2 py-1 text-sm text-muted-foreground">
                 {question}
               </p>
-              {
-                responses[index] && (
-                  <p 
+              {responses[index] && (
+                <p
                   className="bot-response text-sm text-muted-foreground"
-                  dangerouslySetInnerHTML={{__html: responses[index]}}
-                  />
-                )
-              }
+                  dangerouslySetInnerHTML={{ __html: responses[index] }}
+                />
+              )}
             </Fragment>
           ))}
           {isPending && <p className="animate-pulse text-sm">Thinking...</p>}
         </div>
-        <div className="flex cursor-text flex-col rounded-lg border p-4 mt-auto"
-        onClick={handleClickInput}
-        >
-          <Textarea 
-          ref={textareaRef}
-          placeholder="Ask me anything about your notes..."
-          className="resize-none rounded-none border-none bg-transparent p-0 shadow-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
-          // className="placeholder:text-muted-foreground resize-none rounded-none border-none bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-          style={
-            {
-              minHeight: 0,
-              lineHeight: "normal",
-            }
-          }
-          rows={1}
-          onInput={handleInput}
-          onKeyDown={handleKeyDown}
-          value={questionText}
-          onChange={(e) => setQuestionText(e.target.value)}
+
+        <div className="mt-auto w-full">
+          <PlaceholdersAndVanishInput
+            placeholders={placeholders}
+            onChange={handleInputChange}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit();
+            }}
           />
-          <Button className="ml-auto size-8 rounded-full">
-            <ArrowUpIcon className="text-background" onClick={handleSubmit}/>
-          </Button>
         </div>
       </DialogContent>
     </Dialog>
