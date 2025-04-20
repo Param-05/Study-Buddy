@@ -14,9 +14,39 @@ type Props = {
 function SelectNoteButton({ note }: Props) {
   const noteId = useSearchParams().get("noteId") || "";
 
-  const { noteText: selectedNoteText } = useNote();
+  // const { noteText: selectedNoteText } = useNote();
+  const { noteTitle: selectedNoteTitle } = useNote();
   const [shouldUseGlobalNoteText, setShouldUseGlobalNoteText] = useState(false);
-  const [localNoteText, setLocalNoteText] = useState(note.text);
+  // const [localNoteText, setLocalNoteText] = useState(note.text);
+  const [localNoteTitle, setLocalNoteTitle] = useState(note.title);
+
+  useEffect(() => {
+    if (noteId === note.id) {
+      setShouldUseGlobalNoteText(true);
+    } else {
+      setShouldUseGlobalNoteText(false);
+    }
+  }, [noteId, note.id]);
+
+  // useEffect(() => {
+  //   if (shouldUseGlobalNoteText && selectedNoteText) {
+  //     setLocalNoteText(selectedNoteText);
+  //   }
+  // }, [selectedNoteText, shouldUseGlobalNoteText]);
+  // useEffect(() => {
+  //   if (shouldUseGlobalNoteText && selectedNoteTitle) {
+  //     setLocalNoteTitle(selectedNoteTitle);
+  //   }
+  // }, [selectedNoteTitle, shouldUseGlobalNoteText]);
+
+  // // const blankNoteText = "EMPTY NOTE";
+  // const blankNoteTitle = "Untitled";
+  // // let noteText = localNoteText || blankNoteText;
+  // let noteTitle = localNoteTitle || blankNoteTitle;
+  // if (shouldUseGlobalNoteText) {
+  //   // noteText = selectedNoteText || blankNoteText;
+  //   noteTitle = note.title || blankNoteTitle;
+  // }
 
   useEffect(() => {
     if (noteId === note.id) {
@@ -27,17 +57,13 @@ function SelectNoteButton({ note }: Props) {
   }, [noteId, note.id]);
 
   useEffect(() => {
-    if (shouldUseGlobalNoteText && selectedNoteText) {
-      setLocalNoteText(selectedNoteText);
+    if (shouldUseGlobalNoteText && selectedNoteTitle !== undefined) {
+      setLocalNoteTitle(selectedNoteTitle);
     }
-  }, [selectedNoteText, shouldUseGlobalNoteText]);
+  }, [selectedNoteTitle, shouldUseGlobalNoteText]);
 
-  const blankNoteText = "EMPTY NOTE";
-  let noteText = localNoteText || blankNoteText;
-  if (shouldUseGlobalNoteText) {
-    noteText = selectedNoteText || blankNoteText;
-  }
-
+  const blankNoteTitle = "Untitled";
+const noteTitle = localNoteTitle?.trim() === "" ? blankNoteTitle : localNoteTitle;
   return (
     <SidebarMenuButton
       asChild
@@ -45,7 +71,8 @@ function SelectNoteButton({ note }: Props) {
     >
       <Link href={`/?noteId=${note.id}`} className="flex h-fit flex-col">
         <p className="w-full truncate overflow-hidden text-ellipsis whitespace-nowrap">
-          {noteText}
+          {/* {noteText} */}
+          {noteTitle}
         </p>
         <p className="text-muted-foreground text-xs">
           {note.updatedAt.toLocaleDateString()}

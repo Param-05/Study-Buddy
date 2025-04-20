@@ -4,6 +4,7 @@ import React from 'react'
 import AskAIButton from '@/components/AskAIButton'
 import NewNoteButton from '@/components/NewNoteButton'
 import NoteTextInput from '@/components/NoteTextInput'
+import NoteTitleInput from '@/components/NoteTitleInput'
 
 type Props = {
   searchParams: Promise<{[Key: string]: string | string[] | undefined}>
@@ -21,6 +22,7 @@ async function HomePage({searchParams}:Props) {
     <AskAIButton user={user} />
     <NewNoteButton user={user} />
     </div>
+    <NoteTitleInput noteId={noteId} startingTitle={note?.title || ""} />
     <NoteTextInput noteId={noteId} startingNoteText={note?.text || ""} />
 
     {/* <HomeToast /> */}

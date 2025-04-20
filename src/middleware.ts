@@ -23,6 +23,10 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
+  console.log("Middleware running");
+  console.log("NEXT URL:", process.env.NEXT_PUBLIC_BASE_URL);
+  console.log("SUPABASE_ANON_KEY URL:", process.env.SUPABASE_ANON_KEY);
+  console.log("SUPABASE_URL URL:", process.env.SUPABASE_URL);
   const supabase = createServerClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_ANON_KEY!,
