@@ -25,6 +25,8 @@ function NoteTextInput({ noteId, startingNoteText }: Props) {
   const [lastActionType, setLastActionType] = useState<string>("");
   const [processing, setProcessing] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [showToolbar, setShowToolbar] = useState(false);
+
 
   useEffect(() => {
     if (noteIdParam === noteId) {
