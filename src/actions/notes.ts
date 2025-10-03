@@ -1,6 +1,7 @@
 "use server";
 
 import { getUser } from "@/auth/server";
+// import { getRequiredUser } from "@/auth/server";
 import { prisma } from "@/db/prisma";
 import { handleError } from "@/lib/utils";
 import { GoogleGenAI } from "@google/genai";
@@ -8,6 +9,7 @@ import { GoogleGenAI } from "@google/genai";
 export const updateNoteAction = async (noteId: string, text: string) => {
   try {
     const user = await getUser();
+    // const user = await getRequiredUser();
     if (!user) {
       throw new Error("You must be logged in to update a note");
     }
@@ -24,6 +26,7 @@ export const updateNoteAction = async (noteId: string, text: string) => {
 export const createNoteAction = async (noteId: string) => {
   try {
     const user = await getUser();
+    // const user = await getRequiredUser();
     if (!user) {
       throw new Error("You must be logged in to create a note");
     }
@@ -44,6 +47,7 @@ export const createNoteAction = async (noteId: string) => {
 export const deleteNoteAction = async (noteId: string) => {
   try {
     const user = await getUser();
+    // const user = await getRequiredUser();
     if (!user) {
       throw new Error("You must be logged in to delete a note");
     }
@@ -59,6 +63,7 @@ export const deleteNoteAction = async (noteId: string) => {
 export const updateNoteTitleAction = async (noteId: string, title: string) => {
   try {
     const user = await getUser();
+    // const user = await getRequiredUser();
     if (!user) {
       throw new Error("You must be logged in to update a note");
     }
@@ -77,6 +82,7 @@ export const askAIAboutNotesAction = async (
   responses: string[],
 ) => {
   const user = await getUser();
+  // const user = await getRequiredUser();
   if (!user) {
     throw new Error("You must be logged in to ask AI questions");
   }

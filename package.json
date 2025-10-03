@@ -1,5 +1,5 @@
 {
-  "name": "next-notetaking-app",
+  "name": "next-js-studysnap",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -15,7 +15,7 @@
   "dependencies": {
     "@google/genai": "^0.6.0",
     "@google/generative-ai": "^0.24.0",
-    "@prisma/client": "^6.5.0",
+    "@prisma/client": "^6.16.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-dropdown-menu": "^2.1.6",
@@ -52,7 +52,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.2.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
-    "prisma": "^6.5.0",
+    "prisma": "^6.16.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
